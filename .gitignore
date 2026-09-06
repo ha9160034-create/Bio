@@ -1,0 +1,31 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.pytest_cache/
+.coverage
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Git portable binaries
+tools/git/
+
+# Docking runs: keep .gitkeep and the verified pilot run, ignore temporary runs
+docking_runs/*
+!docking_runs/.gitkeep
+!docking_runs/pilot_1M17_repaired_20260906_184129_d1b2dd/
+
+# Temporary and log files
+*.log
+*.tmp
+
+# Operating system files
+Thumbs.db
+Desktop.ini
+.DS_Store\n

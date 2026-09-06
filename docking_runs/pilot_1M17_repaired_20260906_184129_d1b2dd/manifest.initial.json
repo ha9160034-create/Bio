@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "run_id": "pilot_1M17_repaired_20260906_184129_d1b2dd",
+  "status": "running",
+  "created_at_utc": "2026-09-06T18:41:29.886225+00:00",
+  "target": {
+    "pdb_id": "1M17",
+    "coordinate_source": "rcsb_biological_assembly",
+    "assembly_id": 1,
+    "source_url": "https://files.rcsb.org/download/1M17.pdb1.gz",
+    "chains": [
+      "A"
+    ],
+    "created_at_utc": "2026-09-06T18:41:29.886225+00:00",
+    "mutation_label": ""
+  },
+  "binding_site": {
+    "method": "co_crystal_ligand",
+    "reference_ligand": "AQ4",
+    "residues": null,
+    "padding": 8.0
+  },
+  "ligand": {
+    "name": "Erlotinib",
+    "input_smiles": "COCCOC1=C(C=C2C(=C1)C(=NC=N2)NC3=CC=CC(=C3)C#C)OCCOC",
+    "protonation_assumed_ph": 7.4
+  },
+  "grid": {
+    "center": [
+      22.014,
+      0.253,
+      52.794
+    ],
+    "size": [
+      31.7,
+      20.7,
+      23.1
+    ]
+  },
+  "engine": {
+    "name": "AutoDock Vina",
+    "version": "AutoDock Vina v1.2.7",
+    "seeds": [
+      42,
+      101,
+      2024
+    ],
+    "exhaustiveness": 8,
+    "num_modes": 9,
+    "energy_range": 3.0
+  }
+}
