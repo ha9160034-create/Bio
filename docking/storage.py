@@ -5,11 +5,28 @@ import uuid
 import datetime
 from pathlib import Path
 
+import shutil
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 VINA_PATH = PROJECT_ROOT / "tools" / "vina" / "vina.exe"
 BASE_RUNS_DIR = PROJECT_ROOT / "docking_runs"
 
 def get_vina_path() -> Path:
+    """Return path to AutoDock Vina executable, supporting Windows, Linux, and Cloud deployment."""
+    # 1. On Windows, prefer the bundled vina.exe
+    if os.name == "nt" and (PROJECT_ROOT / "tools" / "vina" / "vina.exe").exists():
+        return PROJECT_ROOT / "tools" / "vina" / "vina.exe"
+
+    # 2. Check bundled Linux executable if present
+    bundled_linux = PROJECT_ROOT / "tools" / "vina" / "vina"
+    if bundled_linux.exists():
+        return bundled_linux
+
+    # 3. On Linux / Cloud (Streamlit Cloud), look in system PATH (e.g. /usr/bin/vina from packages.txt)
+    sys_path_vina = shutil.which("vina") or shutil.which("vina.exe")
+    if sys_path_vina:
+        return Path(sys_path_vina)
+
     return VINA_PATH
 
 def create_run_directory(prefix="run") -> tuple[str, Path]:
