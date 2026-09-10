@@ -7,8 +7,6 @@ import requests
 import numpy as np
 import pandas as pd
 from io import StringIO
-from scipy.spatial import KDTree
-from scipy.spatial.distance import cdist
 from Bio.PDB import PDBParser, PDBIO
 from Bio.PDB.SASA import ShrakeRupley
 from Bio.Align import PairwiseAligner
