@@ -38,9 +38,11 @@ def build_and_save_manifest(
     # Valid status values per repair guidelines
     valid_statuses = [
         "validation passed",
+        "validation passed (Top-10 recovery)",
         "validation failed",
         "validation unavailable",
         "exploratory—no reference validation",
+        "exploratory—insufficient independent seeds",
         "run failed"
     ]
     if status not in valid_statuses:

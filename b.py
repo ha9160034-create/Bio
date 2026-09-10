@@ -347,8 +347,8 @@ def get_alignment(seq1, seq2, mode='global'):
 # ======================================
 
 def render_protein_3d(pdb_string, bg_color='#111', style_type='cartoon',
-                      show_surface=True, surface_opacity=0.3, mutations=None,
-                      mut_color='red', zoom_to_mutations=False,
+                      show_surface=True, surface_opacity=0.3, surface_type='MS',
+                      mutations=None, mut_color='red', zoom_to_mutations=False,
                       focus_mut=None):
     """توليد كود HTML لعرض بنية البروتين ثلاثية الأبعاد باستخدام مكتبة py3Dmol."""
     view = py3Dmol.view(width="100%", height=450)
@@ -359,10 +359,10 @@ def render_protein_3d(pdb_string, bg_color='#111', style_type='cartoon',
     style_dict = {style_type: {'color': 'spectrum'}}
     view.setStyle({'model': -1}, style_dict)
 
-
     # إظهار السطح الخارجي للبروتين
     if show_surface:
-        view.addSurface(py3Dmol.SAS, {'opacity': surface_opacity, 'color': '#FFC107'})
+        surf_kind = py3Dmol.MS if surface_type == 'MS' else (py3Dmol.VDW if surface_type == 'VDW' else py3Dmol.SAS)
+        view.addSurface(surf_kind, {'opacity': surface_opacity, 'color': '#FFC107'}, {'model': -1})
 
     # تلوين وتمييز أماكن الطفرات (دمج الأنماط في قاموس واحد لمنع الكتابة الفوقية)
     if mutations:
@@ -465,6 +465,7 @@ def main():
         search_radius    = st.slider("🔍 نصف قطر البحث (Å)", 3.0, 12.0, 5.0)
         view_style       = st.selectbox("نمط العرض", ["cartoon", "stick", "sphere"])
         show_surface     = st.checkbox("إظهار السطح (Surface)", value=False)
+        surface_type     = st.selectbox("نوع السطح الجزيئي:", ["MS (Molecular Surface)", "SAS (Solvent Accessible)", "VDW (Van der Waals)"], index=0)
         surface_opacity  = st.slider("شفافية السطح", 0.0, 1.0, 0.3)
     
     with st.sidebar.expander("🧬 خيارات نمط الإحداثيات والتجمع الحيوي", expanded=True):
@@ -620,10 +621,12 @@ def main():
             # تجهيز نص PDB للعرض ثلاثي الأبعاد والتحليل بناءً على الهيكل الحالي
             pdb_for_view = structure_to_pdb_str(struct)
             
+            surf_code = surface_type.split()[0]
             # استدعاء دالة العرض ثلاثي الأبعاد
             view_html = render_protein_3d(
                 pdb_for_view, bg_color=p['bg'], style_type=view_style,
                 show_surface=show_surface, surface_opacity=surface_opacity,
+                surface_type=surf_code,
                 mutations=highlight if show_mutations else None,
                 mut_color='#F44336' if prefix == 'm' else '#4CAF50',
                 zoom_to_mutations=zoom_mutations, focus_mut=focus_mut

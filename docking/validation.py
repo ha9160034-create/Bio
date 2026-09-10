@@ -174,3 +174,66 @@ def cluster_poses_across_seeds(poses: list[DockingPose], rmsd_threshold: float =
         ))
 
     return result_clusters
+
+def validate_redocking_top_n(
+    reference_ligand_pdb_text: str,
+    poses: list[DockingPose],
+    clusters: list[PoseCluster],
+    top_n: int = 10,
+    rmsd_cutoff: float = 2.0,
+    min_seed_support: int = 2,
+) -> dict:
+    if top_n < 1:
+        raise ValueError("top_n must be >= 1")
+    if not poses:
+        raise ValueError("No docking poses available for redocking validation.")
+
+    ranked = sorted(poses, key=lambda p: p.score)
+    top_pose = ranked[0]
+    top1_rmsd, top1_mapping = calculate_mapped_redocking_rmsd(
+        reference_ligand_pdb_text, top_pose.pdbqt_block
+    )
+    top_pose.rmsd_to_reference = top1_rmsd
+
+    cluster_by_id = {cluster.cluster_id: cluster for cluster in clusters}
+    candidates = []
+    for pose in ranked[:top_n]:
+        rmsd, mapping = calculate_mapped_redocking_rmsd(
+            reference_ligand_pdb_text, pose.pdbqt_block
+        )
+        pose.rmsd_to_reference = rmsd
+        candidates.append((pose, rmsd, mapping))
+
+    recovered_pose, recovered_rmsd, recovered_mapping = min(
+        candidates, key=lambda item: item[1]
+    )
+    recovered_cluster = cluster_by_id.get(recovered_pose.cluster_id)
+    seed_count = recovered_cluster.seed_count if recovered_cluster else 0
+
+    return {
+        "top_n": min(top_n, len(ranked)),
+        "top1": {
+            "seed": top_pose.seed,
+            "rank": top_pose.rank,
+            "score": top_pose.score,
+            "cluster_id": top_pose.cluster_id,
+            "rmsd_angstrom": top1_rmsd,
+            "mapping_details": top1_mapping,
+        },
+        "recovery": {
+            "seed": recovered_pose.seed,
+            "rank": recovered_pose.rank,
+            "score": recovered_pose.score,
+            "cluster_id": recovered_pose.cluster_id,
+            "rmsd_angstrom": recovered_rmsd,
+            "cluster_seed_count": seed_count,
+            "supporting_seeds": (
+                recovered_cluster.supporting_seeds if recovered_cluster else []
+            ),
+            "mapping_details": recovered_mapping,
+        },
+        "candidate_count": len(candidates),
+        "top1_rmsd_pass": top1_rmsd <= rmsd_cutoff,
+        "recovery_rmsd_pass": recovered_rmsd <= rmsd_cutoff,
+        "recovery_cluster_pass": seed_count >= min_seed_support,
+    }

@@ -20,6 +20,7 @@ tools/git/
 docking_runs/*
 !docking_runs/.gitkeep
 !docking_runs/pilot_1M17_repaired_20260906_184129_d1b2dd/
+runs/
 
 # Temporary and log files
 *.log
