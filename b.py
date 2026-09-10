@@ -14,6 +14,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 import py3Dmol
 import plotly.graph_objects as go
+import docking
 from docking.ui import render_docking_tab
 
 
