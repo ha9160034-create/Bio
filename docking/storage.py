@@ -20,6 +20,10 @@ def get_vina_path() -> Path:
     # 2. Check bundled Linux executable if present
     bundled_linux = PROJECT_ROOT / "tools" / "vina" / "vina"
     if bundled_linux.exists():
+        try:
+            bundled_linux.chmod(0o755)
+        except Exception:
+            pass
         return bundled_linux
 
     # 3. On Linux / Cloud (Streamlit Cloud), look in system PATH (e.g. /usr/bin/vina from packages.txt)
