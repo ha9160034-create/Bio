@@ -8,3 +8,4 @@ meeko
 openbabel-wheel
 requests
 plotly
+scipy
