@@ -44,17 +44,31 @@ def calculate_mapped_redocking_rmsd(ref_ligand_pdb_text: str, pose_pdbqt_block: 
     # 1. Parse reference ligand into RDKit molecule
     mol_ref = Chem.MolFromPDBBlock(ref_ligand_pdb_text, sanitize=False)
     if mol_ref is None:
-        ob_ref = pybel.readstring("pdb", ref_ligand_pdb_text)
-        mol_ref = Chem.MolFromMolBlock(ob_ref.write("mol"), sanitize=False)
+        try:
+            from openbabel import pybel
+            ob_ref = pybel.readstring("pdb", ref_ligand_pdb_text)
+            mol_ref = Chem.MolFromMolBlock(ob_ref.write("mol"), sanitize=False)
+        except Exception:
+            pass
 
     if mol_ref is None:
         raise ValueError("Could not parse reference ligand coordinates into a chemical molecule.")
 
-    # 2. Convert pose PDBQT block into RDKit molecule via OpenBabel to preserve coordinates
-    ob_pose = pybel.readstring("pdbqt", pose_pdbqt_block)
-    mol_pose = Chem.MolFromPDBBlock(ob_pose.write("pdb"), sanitize=False)
+    # 2. Convert pose PDBQT block into RDKit molecule
+    mol_pose = None
+    try:
+        from openbabel import pybel
+        ob_pose = pybel.readstring("pdbqt", pose_pdbqt_block)
+        mol_pose = Chem.MolFromPDBBlock(ob_pose.write("pdb"), sanitize=False)
+        if mol_pose is None:
+            mol_pose = Chem.MolFromMolBlock(ob_pose.write("mol"), sanitize=False)
+    except Exception:
+        pass
+
     if mol_pose is None:
-        mol_pose = Chem.MolFromMolBlock(ob_pose.write("mol"), sanitize=False)
+        clean_pose_lines = [l for l in pose_pdbqt_block.splitlines() if l.startswith(("ATOM  ", "HETATM"))]
+        if clean_pose_lines:
+            mol_pose = Chem.MolFromPDBBlock("\n".join(clean_pose_lines) + "\n", sanitize=False)
 
     if mol_pose is None:
         raise ValueError("Could not parse docked pose coordinates into a chemical molecule.")
