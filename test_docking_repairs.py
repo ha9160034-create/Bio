@@ -4,7 +4,6 @@ from unittest.mock import patch
 import json
 import numpy as np
 from pathlib import Path
-import docking
 from rdkit import Chem
 from rdkit.Chem import AllChem, rdFMCS
 from openbabel import pybel

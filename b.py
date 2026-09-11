@@ -7,6 +7,8 @@ import requests
 import numpy as np
 import pandas as pd
 from io import StringIO
+from scipy.spatial import KDTree
+from scipy.spatial.distance import cdist
 from Bio.PDB import PDBParser, PDBIO
 from Bio.PDB.SASA import ShrakeRupley
 from Bio.Align import PairwiseAligner
@@ -14,7 +16,6 @@ import streamlit as st
 import streamlit.components.v1 as components
 import py3Dmol
 import plotly.graph_objects as go
-import docking
 from docking.ui import render_docking_tab
 
 
@@ -200,7 +201,7 @@ def sequence_to_fasta(structure, chain_id, protein_name="protein"):
     return header + '\n'.join(lines) + '\n'
 
 def calculate_all_distances(structure, chain_id: str, radius: float = 5.0):
-    """Calculate residue contacts inside the exact structure shown to the user using pure NumPy."""
+    """Calculate residue contacts inside the exact structure shown to the user."""
     if not structure:
         return []
 
@@ -211,10 +212,12 @@ def calculate_all_distances(structure, chain_id: str, radius: float = 5.0):
 
         all_atoms = list(model.get_atoms())
         all_coords = np.array([atom.get_coord() for atom in all_atoms], dtype=np.float32)
-        atom_info = [
-            (atom.get_parent().get_parent().id, atom.get_parent().id[1], atom.get_parent().id[2])
-            for atom in all_atoms
-        ]
+        tree = KDTree(all_coords)
+
+        atom_info = []
+        for atom in all_atoms:
+            residue = atom.get_parent()
+            atom_info.append((residue.get_parent().id, residue.id[1], residue.id[2]))
 
         results = []
         for residue in model[chain_id]:
@@ -225,25 +228,16 @@ def calculate_all_distances(structure, chain_id: str, radius: float = 5.0):
             target_coords = np.array(
                 [atom.get_coord() for atom in residue.get_atoms()], dtype=np.float32
             )
-            if len(target_coords) == 0:
-                continue
-
-            # Exclude atoms belonging to the current residue
-            mask = [info != target_id for info in atom_info]
-            other_coords = all_coords[mask]
+            nearby_indices = set()
+            for index_list in tree.query_ball_point(target_coords, radius):
+                for index in index_list:
+                    if atom_info[index] != target_id:
+                        nearby_indices.add(index)
 
             min_dist = "-"
-            if len(other_coords) > 0:
-                res_center = target_coords.mean(axis=0)
-                center_dists = np.linalg.norm(other_coords - res_center, axis=1)
-                cand_mask = center_dists <= (radius + 6.0)
-                if np.any(cand_mask):
-                    cand_coords = other_coords[cand_mask]
-                    diff = target_coords[:, None, :] - cand_coords[None, :, :]
-                    dists = np.linalg.norm(diff, axis=-1)
-                    closest = float(dists.min())
-                    if closest <= radius:
-                        min_dist = round(closest, 2)
+            if nearby_indices:
+                neighbour_coords = all_coords[list(nearby_indices)]
+                min_dist = round(float(cdist(target_coords, neighbour_coords).min()), 2)
 
             sasa = getattr(residue, 'sasa', '-')
             if isinstance(sasa, (float, int)):
