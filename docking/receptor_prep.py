@@ -75,15 +75,25 @@ def prepare_receptor(
 
     # 1. Preserve the reference ligand in reference_ligand.pdb before receptor removal
     if ref_upper:
-        for line in pdb_string.splitlines():
-            if line.startswith(("ATOM  ", "HETATM")):
-                rname = line[17:20].strip().upper()
-                if rname == ref_upper:
-                    ref_ligand_lines.append(line)
-        if ref_ligand_lines:
-            ref_lig_path = output_dir / "reference_ligand.pdb"
-            with open(ref_lig_path, "w", encoding="utf-8") as f:
-                f.write("\n".join(ref_ligand_lines) + "\n")
+        ref_lig_path = output_dir / "reference_ligand.pdb"
+        if not ref_lig_path.exists():
+            first_inst_key = None
+            inst_lines = {}
+            for line in pdb_string.splitlines():
+                if line.startswith(("ATOM  ", "HETATM")):
+                    rname = line[17:20].strip().upper()
+                    if rname == ref_upper:
+                        key = (line[21:22], line[22:26].strip(), line[26:27])
+                        if first_inst_key is None:
+                            first_inst_key = key
+                        inst_lines.setdefault(key, []).append(line)
+            if first_inst_key and first_inst_key in inst_lines:
+                ref_ligand_lines = inst_lines[first_inst_key]
+                with open(ref_lig_path, "w", encoding="utf-8") as f:
+                    f.write("\n".join(ref_ligand_lines) + "\n")
+        else:
+            with open(ref_lig_path, "r", encoding="utf-8") as f:
+                ref_ligand_lines = f.read().splitlines()
 
     # 2. Separate protein, ligands, waters, and cofactors with full provenance (resname, chain, resnum)
     for model in struct:
